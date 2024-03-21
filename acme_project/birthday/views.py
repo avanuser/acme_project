@@ -1,5 +1,6 @@
 """View-function for birthday calculation."""
 
+from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, render, redirect
 from .forms import BirthdayForm
 from .models import Birthday
@@ -19,7 +20,10 @@ def birthday(request, pk=None):
         instance = None
     # Передаём в форму либо данные из запроса, либо None. 
     # В случае редактирования прикрепляем объект модели.
-    form = BirthdayForm(request.POST or None, instance=instance)
+    form = BirthdayForm(
+        request.POST or None,
+        files=request.FILES or None,
+        instance=instance)
     # Остальной код без изменений.
     context = {'form': form}
     # Сохраняем данные, полученные из формы, и отправляем ответ:
@@ -33,11 +37,20 @@ def birthday(request, pk=None):
 
 
 def birthday_list(request):
-    """Display records from DB."""
-    # Получаем все объекты модели Birthday из БД.
-    birthdays = Birthday.objects.all()
-    # Передаём их в контекст шаблона.
-    context = {'birthdays': birthdays}
+    # Получаем список всех объектов с сортировкой по id.
+    birthdays = Birthday.objects.order_by('id')
+    # Создаём объект пагинатора с количеством N записей на страницу.
+    paginator = Paginator(birthdays, 2)
+
+    # Получаем из запроса значение параметра page.
+    page_number = request.GET.get('page')
+    # Получаем запрошенную страницу пагинатора.
+    # Если параметра page нет в запросе или его значение не приводится к числу,
+    # вернётся первая страница.
+    page_obj = paginator.get_page(page_number)
+    # Вместо полного списка объектов передаём в контекст
+    # объект страницы пагинатора
+    context = {'page_obj': page_obj}
     return render(request, 'birthday/birthday_list.html', context)
 
 
