@@ -2,6 +2,8 @@
 
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, render, redirect
+from django.views.generic import UpdateView, CreateView, ListView, DeleteView
+from django.urls import reverse_lazy
 from .forms import BirthdayForm
 from .models import Birthday
 from .utils import calculate_birthday_countdown
@@ -70,3 +72,66 @@ def delete_birthday(request, pk):
         return redirect('birthday:list')
     # Если был получен GET-запрос — отображаем форму.
     return render(request, 'birthday/birthday.html', context)
+
+
+# Наследуем класс от встроенного ListView:
+class BirthdayListView(ListView):
+    # Указываем модель, с которой работает CBV...
+    model = Birthday
+    # ...сортировку, которая будет применена при выводе списка объектов:
+    ordering = 'id'
+    # ...и даже настройки пагинации:
+    paginate_by = 3 
+
+
+"""class BirthdayCreateView(CreateView):
+    # Указываем модель, с которой работает CBV...
+    model = Birthday
+    # Этот класс сам может создать форму на основе модели!
+    # Нет необходимости отдельно создавать форму через ModelForm.
+    # Указываем поля, которые должны быть в форме:
+    # fields = '__all__'
+
+    # Указываем имя формы:
+    form_class = BirthdayForm
+
+    # Явным образом указываем шаблон:
+    template_name = 'birthday/birthday.html'
+    # Указываем namespace:name страницы, куда будет перенаправлен пользователь
+    # после создания объекта:
+    success_url = reverse_lazy('birthday:list')
+
+
+class BirthdayUpdateView(UpdateView):
+    model = Birthday
+    form_class = BirthdayForm
+    template_name = 'birthday/birthday.html'
+    success_url = reverse_lazy('birthday:list')
+
+
+class BirthdayDeleteView(DeleteView):
+    model = Birthday
+    # template_name = 'birthday/birthday.html'     # теперь используем шаблон по умолчанию - birthday_confirm_delete.html
+    success_url = reverse_lazy('birthday:list')"""
+
+
+class BirthdayMixin:
+    model = Birthday
+    success_url = reverse_lazy('birthday:list')
+
+
+class BirthdayFormMixin:
+    form_class = BirthdayForm
+    template_name = 'birthday/birthday.html'
+
+
+class BirthdayCreateView(BirthdayMixin, BirthdayFormMixin, CreateView):
+    pass
+
+
+class BirthdayUpdateView(BirthdayMixin, BirthdayFormMixin, UpdateView):
+    pass
+
+
+class BirthdayDeleteView(BirthdayMixin, DeleteView):
+    pass
